@@ -95,13 +95,13 @@ INSTANCE_CONFIGS = [
 # UBUNTU ARM IMAGE
 # =========================================================
 
-IMAGE_ID = "ocid1.image.oc1.me-dubai-1.aaaaaaaay6xwq4z2k6m5xw6q4m2p7n9r8t5v3c1b0n7m6q5w4e3r2t1y"
+IMAGE_ID = "ocid1.image.oc1.me-dubai-1.aaaaaaaab352mbi4vcyymzs4ccln576k34khc357fk2hlaqx3cuzjclgkoea"
 
 print("Using Ubuntu ARM image...")
 print(f"Image ID: {IMAGE_ID}")
 
 send_telegram(
-    "Ubuntu ARM image selected successfully."
+    "Ubuntu 24.04 ARM image selected successfully."
 )
 # =========================================================
 # TRY INSTANCE CREATION
