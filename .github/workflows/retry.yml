@@ -33,7 +33,7 @@ jobs:
 
           COMPARTMENT_OCID: ${{ secrets.COMPARTMENT_OCID }}
           SUBNET_OCID: ${{ secrets.SUBNET_OCID }}
-          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+          OCI_SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
 
           IMAGE_OCID: ${{ secrets.IMAGE_OCID }}
 
