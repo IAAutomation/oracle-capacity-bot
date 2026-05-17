@@ -92,49 +92,17 @@ INSTANCE_CONFIGS = [
 
 
 # =========================================================
-# FIND UBUNTU ARM IMAGE
+# UBUNTU ARM IMAGE
 # =========================================================
 
-print("Searching for Ubuntu ARM image...")
+IMAGE_ID = "ocid1.image.oc1.me-dubai-1.aaaaaaaay6xwq4z2k6m5xw6q4m2p7n9r8t5v3c1b0n7m6q5w4e3r2t1y"
+
+print("Using Ubuntu ARM image...")
+print(f"Image ID: {IMAGE_ID}")
 
 send_telegram(
-    "Oracle Retry Bot Started\n\nSearching for Ubuntu ARM image..."
+    "Ubuntu ARM image selected successfully."
 )
-
-images = compute_client.list_images(
-    compartment_id=COMPARTMENT_ID
-).data
-
-IMAGE_ID = None
-
-for image in images:
-
-    name = image.display_name.lower()
-
-    if (
-        "ubuntu" in name and
-        "22.04" in name and
-        "aarch64" in name and
-        "minimal" in name and
-        image.lifecycle_state == "AVAILABLE"
-    ):
-
-        IMAGE_ID = image.id
-
-        print(f"Found Image: {image.display_name}")
-        print(f"Image ID: {IMAGE_ID}")
-
-        break
-
-if not IMAGE_ID:
-
-    error_msg = "ERROR: Ubuntu ARM image not found"
-
-    print(error_msg)
-
-    send_telegram(error_msg)
-
-    sys.exit(1)
 # =========================================================
 # TRY INSTANCE CREATION
 # =========================================================
