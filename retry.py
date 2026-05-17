@@ -198,7 +198,7 @@ for config_item in INSTANCE_CONFIGS:
             f"{error_message}"
         )
 
-        time.sleep(30)
+        time.sleep(60)
 
 # =========================================================
 # FINAL STATUS
