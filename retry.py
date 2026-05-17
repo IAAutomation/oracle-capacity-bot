@@ -88,50 +88,15 @@ INSTANCE_CONFIGS = [
     }
 ]
 
+
+
+
 # =========================================================
-# FIND UBUNTU ARM IMAGE
+# MANUAL UBUNTU ARM IMAGE
+# Dubai Region
 # =========================================================
 
-print("Searching for Ubuntu ARM image...")
-
-send_telegram(
-    "Oracle Retry Bot Started\n\nSearching for Ubuntu ARM image..."
-)
-
-images = compute_client.list_images(
-    compartment_id=COMPARTMENT_ID,
-    operating_system="Canonical Ubuntu",
-    operating_system_version="22.04"
-).data
-
-IMAGE_ID = None
-
-for image in images:
-
-    image_name = image.display_name.lower()
-
-    if (
-        "minimal" in image_name and
-        "aarch64" in image_name and
-        image.lifecycle_state == "AVAILABLE"
-    ):
-
-        IMAGE_ID = image.id
-
-        print(f"Found Image: {image.display_name}")
-
-        break
-
-if not IMAGE_ID:
-
-    error_msg = "ERROR: Ubuntu ARM image not found"
-
-    print(error_msg)
-
-    send_telegram(error_msg)
-
-    sys.exit(1)
-
+IMAGE_ID = "ocid1.image.oc1.me-dubai-1.aaaaaaaaj2t5qj4h6x6jv4h7w4f7r5m5r3q2xwq"
 # =========================================================
 # TRY INSTANCE CREATION
 # =========================================================
