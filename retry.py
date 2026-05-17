@@ -1,82 +1,94 @@
-import os
+import oci
+import time
 import sys
 import requests
-import oci
-from oci.exceptions import ServiceError
 
 # =========================================================
-# ORACLE OCI CONFIG
+# OCI CONFIG
 # =========================================================
 
-config = {
-    "user": "ocid1.user.oc1..aaaaaaaacn36y6qx6cu4ldjefc2qbu7yaa5t2arc3yvbzt7abzjtwls4i7ha",
+USER_OCID = "ocid1.user.oc1..aaaaaaaacn36y6qx6cu4ldjefc2qbu7yaa5t2arc3yvbzt7abzjtwls4i7ha"
 
-    "fingerprint": os.environ["OCI_FINGERPRINT"],
+TENANCY_OCID = "ocid1.tenancy.oc1..aaaaaaaaxh2rr7l5fgr3wpsxjv2gddobecb2klfiboaa7nu3ry32qutzvihq"
 
-    "tenancy": "ocid1.tenancy.oc1..aaaaaaaaxh2rr7l5fgr3wpsxjv2gddobecb2klfiboaa7nu3ry32qutzvihq",
+COMPARTMENT_OCID = "ocid1.tenancy.oc1..aaaaaaaaxh2rr7l5fgr3wpsxjv2gddobecb2klfiboaa7nu3ry32qutzvihq"
 
-    "region": "me-dubai-1",
+SUBNET_OCID = "ocid1.subnet.oc1.me-dubai-1.aaaaaaaad27ivni7hdkuznhsgdavuaqidm3xv5naihq5w4dly4zl7dx2fbka"
 
-    "key_content": os.environ["OCI_PRIVATE_KEY"]
-}
+REGION = "me-dubai-1"
+
+AVAILABILITY_DOMAIN = "TnTd:ME-DUBAI-1-AD-1"
+
+SHAPE = "VM.Standard.A1.Flex"
+
+INSTANCE_NAME = "openclaw-arm"
 
 # =========================================================
-# TELEGRAM CONFIG
+# IMAGE
 # =========================================================
+
+IMAGE_ID = "ocid1.image.oc1.me-dubai-1.aaaaaaaab352mbi4vcyymzs4ccln576k34khc357fk2hlaqx3cuzjclgkoea"
+
+# =========================================================
+# GITHUB SECRETS
+# =========================================================
+
+import os
+
+FINGERPRINT = os.environ["OCI_FINGERPRINT"]
+
+PRIVATE_KEY = os.environ["OCI_PRIVATE_KEY"]
+
+SSH_PUBLIC_KEY = os.environ["OCI_SSH_PUBLIC_KEY"]
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+
+# =========================================================
+# TELEGRAM
+# =========================================================
 
 def send_telegram(message):
 
     try:
+
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
 
-        data = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": message
-        }
-
-        requests.post(url, data=data)
+        requests.post(
+            url,
+            data={
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": message
+            },
+            timeout=20
+        )
 
     except Exception as e:
-        print("Telegram Error:", e)
+
+        print("Telegram Error:")
+        print(str(e))
 
 # =========================================================
-# OCI CLIENT
+# OCI CLIENT CONFIG
 # =========================================================
+
+config = {
+    "user": USER_OCID,
+    "key_content": PRIVATE_KEY,
+    "fingerprint": FINGERPRINT,
+    "tenancy": TENANCY_OCID,
+    "region": REGION
+}
 
 compute_client = oci.core.ComputeClient(config)
 
 # =========================================================
-# STATIC OCI VALUES
-# =========================================================
-
-COMPARTMENT_ID = "ocid1.tenancy.oc1..aaaaaaaaxh2rr7l5fgr3wpsxjv2gddobecb2klfiboaa7nu3ry32qutzvihq"
-
-SUBNET_ID = "ocid1.subnet.oc1.me-dubai-1.aaaaaaaad27ivni7hdkuznhsgdavuaqidm3xv5naihq5w4dly4zl7dx2fbka"
-
-AVAILABILITY_DOMAIN = "TnTd:ME-DUBAI-1-AD-1"
-
-SSH_PUBLIC_KEY = os.environ["OCI_SSH_PUBLIC_KEY"]
-
-# =========================================================
-# INSTANCE SETTINGS
-# =========================================================
-
-INSTANCE_NAME = "openclaw-arm"
-
-SHAPE = "VM.Standard.A1.Flex"
-
-BOOT_VOLUME_SIZE = 50
-
-# =========================================================
-# CONFIG PRIORITY
-# First tries 6GB
-# Then tries 4GB
+# INSTANCE CONFIGS
 # =========================================================
 
 INSTANCE_CONFIGS = [
+
     {
         "ocpus": 1,
         "memory": 6
@@ -88,43 +100,44 @@ INSTANCE_CONFIGS = [
     }
 ]
 
-
-
-
 # =========================================================
-# UBUNTU ARM IMAGE
+# START MESSAGE
 # =========================================================
-
-IMAGE_ID = "ocid1.image.oc1.me-dubai-1.aaaaaaaab352mbi4vcyymzs4ccln576k34khc357fk2hlaqx3cuzjclgkoea"
 
 print("Using Ubuntu ARM image...")
 print(f"Image ID: {IMAGE_ID}")
 
 send_telegram(
+    "Oracle Retry Bot Started\n\n"
     "Ubuntu 24.04 ARM image selected successfully."
 )
+
 # =========================================================
 # TRY INSTANCE CREATION
 # =========================================================
 
-for cfg in INSTANCE_CONFIGS:
+success = False
 
-    ocpus = cfg["ocpus"]
-    memory = cfg["memory"]
+for config_item in INSTANCE_CONFIGS:
 
-    print("\n===================================")
+    ocpus = config_item["ocpus"]
+    memory = config_item["memory"]
+
+    print("===================================")
     print(f"Trying: {ocpus} OCPU / {memory} GB RAM")
-    print("===================================\n")
+    print("===================================")
 
     send_telegram(
-        f"Oracle Capacity Attempt\n\nTrying:\n{ocpus} OCPU\n{memory}GB RAM"
+        f"Trying Oracle VM:\n\n"
+        f"OCPU: {ocpus}\n"
+        f"RAM: {memory} GB"
     )
 
     try:
 
         launch_details = oci.core.models.LaunchInstanceDetails(
 
-            compartment_id=COMPARTMENT_ID,
+            compartment_id=COMPARTMENT_OCID,
 
             availability_domain=AVAILABILITY_DOMAIN,
 
@@ -137,15 +150,14 @@ for cfg in INSTANCE_CONFIGS:
                 memory_in_gbs=memory
             ),
 
-            source_details=oci.core.models.InstanceSourceViaImageDetails(
-                source_type="image",
-                image_id=IMAGE_ID,
-                boot_volume_size_in_gbs=BOOT_VOLUME_SIZE
+            create_vnic_details=oci.core.models.CreateVnicDetails(
+                subnet_id=SUBNET_OCID,
+                assign_public_ip=True
             ),
 
-            create_vnic_details=oci.core.models.CreateVnicDetails(
-                subnet_id=SUBNET_ID,
-                assign_public_ip=True
+            source_details=oci.core.models.InstanceSourceViaImageDetails(
+                source_type="image",
+                image_id=IMAGE_ID
             ),
 
             metadata={
@@ -153,79 +165,63 @@ for cfg in INSTANCE_CONFIGS:
             }
         )
 
-        response = compute_client.launch_instance(launch_details)
+        response = compute_client.launch_instance(
+            launch_details
+        )
 
         instance_id = response.data.id
 
-        success_msg = f'''
-SUCCESS! ORACLE VM CREATED
+        success = True
 
-Instance Name:
-{INSTANCE_NAME}
-
-Shape:
-{SHAPE}
-
-Config:
-{ocpus} OCPU / {memory}GB RAM
-
-Instance ID:
-{instance_id}
-
-IMPORTANT:
-Disable GitHub workflow now.
-'''
-
-        print(success_msg)
-
-        send_telegram(success_msg)
-
-        sys.exit(0)
-
-    except ServiceError as e:
-
-        error_text = str(e.message)
-
-        print("\nFAILED:")
-        print(error_text)
+        print("===================================")
+        print("SUCCESS! ORACLE VM CREATED")
+        print(f"Instance ID: {instance_id}")
+        print("===================================")
 
         send_telegram(
-            f"FAILED\n\n{ocpus} OCPU / {memory}GB\n\n{error_text}"
+            "SUCCESS! ORACLE VM CREATED\n\n"
+            f"Instance ID:\n{instance_id}\n\n"
+            "Disable GitHub workflow now."
         )
 
-        if "Out of capacity" in error_text:
-
-            print("Capacity unavailable. Trying next config...")
-
-        else:
-
-            print("OCI API Error")
+        break
 
     except Exception as e:
 
-        unexpected_error = str(e)
+        error_message = str(e)
 
-        print("\nUNEXPECTED ERROR:")
-        print(unexpected_error)
+        print("FAILED:")
+        print(error_message)
 
         send_telegram(
-            f"UNEXPECTED ERROR\n\n{unexpected_error}"
+            f"FAILED:\n\n"
+            f"{error_message}"
         )
 
+        time.sleep(30)
+
 # =========================================================
-# ALL CONFIGS FAILED
+# FINAL STATUS
 # =========================================================
 
-final_msg = '''
-NO ORACLE CAPACITY AVAILABLE
+if not success:
 
-Tried:
-- 1 OCPU / 6GB
-- 1 OCPU / 4GB
+    print("===================================")
+    print("NO ORACLE CAPACITY AVAILABLE")
+    print("")
+    print("Tried:")
+    print("- 1 OCPU / 6GB")
+    print("- 1 OCPU / 4GB")
+    print("")
+    print("GitHub Actions will retry automatically in 10 minutes.")
+    print("===================================")
 
-GitHub Actions will retry automatically in 5 minutes.
-'''
+    send_telegram(
+        "NO ORACLE CAPACITY AVAILABLE\n\n"
+        "Tried:\n"
+        "- 1 OCPU / 6GB\n"
+        "- 1 OCPU / 4GB\n\n"
+        "Retrying automatically in 10 minutes."
+    )
 
-print(final_msg)
-
-send_telegram(final_msg)
+    sys.exit(0)
